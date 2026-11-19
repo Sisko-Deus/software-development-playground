@@ -1,7 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"object-serializer/serializer"
+	"os"
 )
 
 type R struct {
@@ -19,7 +21,17 @@ func main() {
 		Test{V1: 10, S1: "Test_1", R1: R{V2: 101}},
 		Test{V1: 11, S1: "Test_2", R1: R{V2: 102}},
 	}
+
 	srlz := serializer.NewJSONSerializer()
 	srlz.IncludeTimestamp = true
+
 	serializer.SerializePrint(srlz, t)
+
+	str, err := serializer.SerializeToString(srlz, t)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Print(str)
+
+	serializer.SerializeToWriter(os.Stdout, srlz, t)
 }
