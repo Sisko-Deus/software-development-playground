@@ -73,6 +73,48 @@ func SerializeToStringAsync(
 	return out
 }
 
+type TypedResult[T any] struct {
+	Value T
+	Data  string
+	Err   error
+}
+
+func SerializeToStringAsyncTyped[T any](
+	ctx context.Context,
+	s Serializer,
+	in <-chan T,
+	outBufSize int,
+) <-chan TypedResult[T] {
+	if outBufSize < 1 {
+		outBufSize = 1
+	}
+	out := make(chan TypedResult[T], outBufSize)
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case v, ok := <-in:
+				if !ok {
+					return
+				}
+				str, err := SerializeToString(s, v)
+				res := TypedResult[T]{
+					Value: v,
+					Data:  str,
+					Err:   err,
+				}
+				select {
+				case <-ctx.Done():
+					return
+				case out <- res:
+				}
+			}
+		}
+	}()
+	return out
+}
+
 func SerializeToWriterAsync(
 	ctx context.Context,
 	w io.Writer,
